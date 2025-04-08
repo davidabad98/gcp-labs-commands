@@ -1,6 +1,7 @@
-PROJECT_ID="lab7-hadoop-hive"
-BUCKET_NAME="lab8-20240407"
-REGION="us-central1"
+PROJECT_ID="lab7-hadoop-hive"  
+BUCKET_NAME="lab8-20240407"  
+REGION="us-central1"  
+
 # Step 1: Create a Storage Bucket
 gsutil mb -p $PROJECT_ID -l $REGION gs://$BUCKET_NAME/
 
@@ -60,5 +61,42 @@ spark = SparkSession.builder.getOrCreate()
 
 df = spark.read.parquet("gs://your-bucket-name/data/")
 df.show(5)
+
+
+
+
+-----------------------------------------------------------
+🔧 Step 6a: Feature Engineering
+Example: Calculate trip duration (in minutes):
+
+from pyspark.sql.functions import unix_timestamp, round
+
+df = df.withColumn("trip_duration_min", 
+    (unix_timestamp("tpep_dropoff_datetime") - unix_timestamp("tpep_pickup_datetime")) / 60
+)
+
+📊 Step 6b: Descriptive Stats
+df.describe(["trip_distance", "fare_amount", "trip_duration_min"]).show()
+
+📌 Step 6c: Data Filtering (Clean-up)
+Remove invalid trip distances, durations, and zero fares.
+
+df = df.filter((df.trip_distance > 0) & 
+               (df.trip_duration_min > 0) & 
+               (df.fare_amount > 0))
+
+📈 Step 6d: Visualizations (in PySpark + Pandas)
+Since PySpark doesn’t have native plotting, we convert samples to Pandas:
+
+sample_df = df.select("trip_distance", "fare_amount", "trip_duration_min").sample(False, 0.01).toPandas()
+
+import matplotlib.pyplot as plt
+import seaborn as sns
+
+sns.histplot(sample_df['trip_distance'], kde=True)
+plt.title("Trip Distance Distribution")
+plt.xlabel("Miles")
+plt.ylabel("Frequency")
+plt.show()
 
 
